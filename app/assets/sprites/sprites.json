@@ -1,0 +1,133 @@
+{
+    "frames":{
+        "gold": {
+            "frame":{ "x":0,"y":0,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "stairsu": {
+            "frame":{ "x":36,"y":0,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "grue": {
+            "frame":{ "x":72,"y":0,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "stairsd": {
+            "frame":{ "x":108,"y":0,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "treasure": {
+            "frame":{ "x":144,"y":0,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "rock": {
+            "frame":{ "x":180,"y":0,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "frame": {
+            "frame":{ "x":216,"y":0,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "door": {
+            "frame":{ "x":0,"y":36,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "pit": {
+            "frame":{ "x":36,"y":36,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "wyvern": {
+            "frame":{ "x":72,"y":36,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "dragon": {
+            "frame":{ "x":108,"y":36,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "player": {
+            "frame":{ "x":144,"y":36,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "floor": {
+            "frame":{ "x":180,"y":36,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "passage": {
+            "frame":{ "x":216,"y":36,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "snake": {
+            "frame":{ "x":0,"y":72,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "nuibus": {
+            "frame":{ "x":36,"y":72,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        },
+        "spider": {
+            "frame":{ "x":72,"y":72,"w":32,"h":32 },
+            "rotated":false,
+            "trimmed":false,
+            "spriteSourceSize":{ "x":0,"y":0,"w":32,"h":32 },
+            "sourceSize":{ "w":32,"h":32 }
+        }
+    },
+    "meta":{
+        "app":"Paul Robson's Python texture packer",
+        "version":"1.0",
+        "image":"sprites.png",
+        "size":{
+             "w":256,
+             "h":106
+         },
+         "scale":1
+    }
+}

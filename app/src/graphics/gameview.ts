@@ -47,40 +47,16 @@ class GameView extends Phaser.Group implements IView {
             var img:Phaser.Image;
             img = this.game.add.image(x*this.cellSize,y*this.cellSize,
                                   "sprites",this.tileName[cell],this);
+            img.sendToBack();
             this.singleCells[key] = img;        
-            this.setCellVisible(x,y,false);
         } else {
             this.singleCells[key].loadTexture("sprites",this.tileName[cell]);
         }
         this.singleCells[key].width = this.singleCells[key].height = this.cellSize;
     }
 
-    setCellVisible(x:number, y:number,isVisible:boolean = true) : void {
-        var key:number = this.getKey(x,y);
-        // Check cell here.
-        if (this.singleCells[key] == null) {
-            throw Error("Cannot change visibility of no cell");
-        }
-        // Update alpha
-        this.singleCells[key].alpha = isVisible ? GameView.SHOW_ALPHA : GameView.HIDDEN_ALPHA;
-        // Any actor here takes the same visibility.
-        for (var actor of this.actors) {
-            if (actor.x == x * this.cellSize && actor.y == y * this.cellSize) {
-                actor.alpha = this.singleCells[key].alpha;
-            }
-        }
-    }
-
     getKey(x:number,y:number) : number {
         return (x + 10) * 1000 + y + 10;
-    }
-
-    addArea(x: number, y: number, width: number, height: number, cell: CELLTYPE): void {
-        for (var x1:number = x;x1 < x + width;x1++) {
-            for (var y1:number = y;y1 < y+height;y1++) {
-                this.setCell(x1,y1,cell);
-            }
-        }
     }
 
     addActor(x: number, y: number, sprite: string): number {
@@ -89,6 +65,7 @@ class GameView extends Phaser.Group implements IView {
         spr.width = spr.height = this.cellSize;                                                     
         var n:number = this.nextActorID++;
         this.actors[n] = spr;
+        //this.updateActorVisibility(n,x,y);
         return n;                                                     
     }
 
@@ -109,12 +86,23 @@ class GameView extends Phaser.Group implements IView {
                             to({ x: x*this.cellSize,y:y*this.cellSize },
                             250,
                             Phaser.Easing.Default,true);
-        // Take on the visibility of the target square
-        var key:number = this.getKey(x,y);
-        if (this.singleCells[key] != null) {
-            this.actors[actorID].alpha = this.singleCells[key].alpha;
-        } else {
-            this.actors[actorID].alpha = GameView.HIDDEN_ALPHA;
-        }                         
+        this.updateActorVisibility(actorID,x,y);                            
+    }
+
+    /**
+     * Update the visibility of the actor who is at x,y
+     * 
+     * @param {number} actorID 
+     * @param {number} x 
+     * @param {number} y 
+     * 
+     * @memberOf IView
+     */
+
+    private updateActorVisibility(actorID: number, x: number, y: number) : void {
+        if (this.actors[actorID] == null) {
+            throw Error("Unknown actor ID");
+        }
+        this.actors[actorID].alpha = (this.singleCells[this.getKey(x,y)] != null) ? 1.0:0.35;
     }
 }

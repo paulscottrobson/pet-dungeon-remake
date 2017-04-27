@@ -15,14 +15,14 @@ var GameState = (function (_super) {
     }
     GameState.prototype.init = function (status) {
         this.status = status;
-        var r = new GameView(this.game, 64);
-        r.addArea(0, 0, 40, 23, CELLTYPE.FRAME);
-        r.addArea(1, 1, 38, 21, CELLTYPE.ROCK);
-        r.addArea(3, 3, 3, 4, CELLTYPE.FLOOR);
-        r.setCell(4, 4, CELLTYPE.TREASURE);
-        r.setCell(4, 4, CELLTYPE.PIT);
-        var n = r.addActor(1, 1, "player");
-        r.moveActor(n, 3, 7);
+        var r = new GameView(this.game, 24);
+        var l = new DungeonLevel(r, 1, 23, 40);
+        var p = l.findSpace(CELLTYPE.PASSAGE);
+        if (p == null)
+            p = l.findSpace(CELLTYPE.FLOOR);
+        r.addActor(p[0], p[1], "player");
+        l.openVisibility(r, 4, 4, 2);
+        l.openVisibilityAll(r);
     };
     GameState.prototype.create = function () {
     };
@@ -122,37 +122,16 @@ var GameView = (function (_super) {
         if (this.singleCells[key] == null) {
             var img;
             img = this.game.add.image(x * this.cellSize, y * this.cellSize, "sprites", this.tileName[cell], this);
+            img.sendToBack();
             this.singleCells[key] = img;
-            this.setCellVisible(x, y, false);
         }
         else {
             this.singleCells[key].loadTexture("sprites", this.tileName[cell]);
         }
         this.singleCells[key].width = this.singleCells[key].height = this.cellSize;
     };
-    GameView.prototype.setCellVisible = function (x, y, isVisible) {
-        if (isVisible === void 0) { isVisible = true; }
-        var key = this.getKey(x, y);
-        if (this.singleCells[key] == null) {
-            throw Error("Cannot change visibility of no cell");
-        }
-        this.singleCells[key].alpha = isVisible ? GameView.SHOW_ALPHA : GameView.HIDDEN_ALPHA;
-        for (var _i = 0, _a = this.actors; _i < _a.length; _i++) {
-            var actor = _a[_i];
-            if (actor.x == x * this.cellSize && actor.y == y * this.cellSize) {
-                actor.alpha = this.singleCells[key].alpha;
-            }
-        }
-    };
     GameView.prototype.getKey = function (x, y) {
         return (x + 10) * 1000 + y + 10;
-    };
-    GameView.prototype.addArea = function (x, y, width, height, cell) {
-        for (var x1 = x; x1 < x + width; x1++) {
-            for (var y1 = y; y1 < y + height; y1++) {
-                this.setCell(x1, y1, cell);
-            }
-        }
     };
     GameView.prototype.addActor = function (x, y, sprite) {
         var spr = this.game.add.sprite(x * this.cellSize, y * this.cellSize, "sprites", sprite, this);
@@ -174,13 +153,13 @@ var GameView = (function (_super) {
         }
         this.game.add.tween(this.actors[actorID]).
             to({ x: x * this.cellSize, y: y * this.cellSize }, 250, Phaser.Easing.Default, true);
-        var key = this.getKey(x, y);
-        if (this.singleCells[key] != null) {
-            this.actors[actorID].alpha = this.singleCells[key].alpha;
+        this.updateActorVisibility(actorID, x, y);
+    };
+    GameView.prototype.updateActorVisibility = function (actorID, x, y) {
+        if (this.actors[actorID] == null) {
+            throw Error("Unknown actor ID");
         }
-        else {
-            this.actors[actorID].alpha = GameView.HIDDEN_ALPHA;
-        }
+        this.actors[actorID].alpha = (this.singleCells[this.getKey(x, y)] != null) ? 1.0 : 0.35;
     };
     return GameView;
 }(Phaser.Group));
@@ -198,6 +177,142 @@ var CELLTYPE;
     CELLTYPE[CELLTYPE["PIT"] = 7] = "PIT";
     CELLTYPE[CELLTYPE["DOOR"] = 8] = "DOOR";
 })(CELLTYPE || (CELLTYPE = {}));
+var DungeonLevel = (function () {
+    function DungeonLevel(view, level, width, height) {
+        this.width = width;
+        this.height = height;
+        this.level = level;
+        this.monsters = [];
+        this.cell = [];
+        for (var x = 0; x < width; x++) {
+            this.cell[x] = [];
+            for (var y = 0; y < height; y++) {
+                this.cell[x][y] = CELLTYPE.ROCK;
+            }
+        }
+        this.frame();
+        var roomCount = Math.max(3, Math.round(width * height) / (40 * 23) * 9);
+        for (var n = 0; n < roomCount; n++) {
+            this.drawRoom(view);
+        }
+        var pos = this.findSpace(CELLTYPE.FLOOR);
+        this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSD;
+        var pos = this.findSpace(CELLTYPE.FLOOR);
+        this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSU;
+        var goldCount = Math.max(2, Math.round(width * height) / (40 * 23) * 11);
+        for (var n = 0; n < goldCount; n++) {
+            var pos = this.findSpace(CELLTYPE.FLOOR);
+            this.cell[pos[0]][pos[1]] = CELLTYPE.TREASURE;
+        }
+    }
+    DungeonLevel.prototype.findSpace = function (reqd) {
+        var x;
+        var y;
+        var count = 0;
+        do {
+            if (count++ == 2000)
+                return null;
+            x = this.getIntRandom(this.width);
+            y = this.getIntRandom(this.height);
+        } while (this.cell[x][y] != reqd);
+        return [x, y];
+    };
+    DungeonLevel.prototype.drawRoom = function (view) {
+        var x;
+        var y;
+        var w;
+        var h;
+        var ok = false;
+        var count = 0;
+        while (!ok) {
+            if (count++ == 100)
+                return;
+            var sz = Math.max(2, Math.round((this.width + this.height) / 63 * 9));
+            w = this.getIntRandom(sz) + 2;
+            h = this.getIntRandom(sz) + 2;
+            x = this.getIntRandom(this.width - w - 1) + 1;
+            y = this.getIntRandom(this.height - h - 1) + 1;
+            ok = true;
+            for (var xt = x - 1; xt <= x + w && ok; xt++) {
+                for (var yt = y - 1; yt <= y + h && ok; yt++) {
+                    if (this.cell[xt][yt] != CELLTYPE.ROCK) {
+                        ok = false;
+                    }
+                }
+            }
+        }
+        for (var xt = x; xt < x + w && ok; xt++) {
+            for (var yt = y; yt < y + h && ok; yt++) {
+                this.cell[xt][yt] = CELLTYPE.FLOOR;
+            }
+        }
+        var m = new Monster(view, x + this.getIntRandom(w), y + this.getIntRandom(h));
+        this.monsters.push(m);
+        this.passage(x + 1, y + h, 0, 1);
+        this.passage(x + w, y + 1, 1, 0);
+        this.passage(x + 1, y - 1, 0, -1);
+        this.passage(x - 1, y + 1, -1, 0);
+    };
+    DungeonLevel.prototype.passage = function (x, y, xi, yi) {
+        var n = 0;
+        while (this.cell[x + xi * n][y + yi * n] == CELLTYPE.ROCK) {
+            n++;
+        }
+        if (this.cell[x + xi * n][y + yi * n] != CELLTYPE.FRAME) {
+            var isFirst = true;
+            while (--n >= 0) {
+                this.cell[x + xi * n][y + yi * n] = (n == 0 || isFirst) ? CELLTYPE.DOOR : CELLTYPE.PASSAGE;
+                isFirst = false;
+            }
+        }
+    };
+    DungeonLevel.prototype.frame = function () {
+        for (var x = 0; x < this.width; x++) {
+            this.cell[x][0] = this.cell[x][this.height - 1] = CELLTYPE.FRAME;
+        }
+        for (var y = 0; y < this.height; y++) {
+            this.cell[0][y] = this.cell[this.width - 1][y] = CELLTYPE.FRAME;
+        }
+    };
+    DungeonLevel.prototype.getRandom = function () {
+        return Math.random();
+    };
+    DungeonLevel.prototype.getIntRandom = function (range) {
+        return Math.floor(this.getRandom() * range);
+    };
+    DungeonLevel.prototype.get = function (x, y) {
+        return this.cell[x][y];
+    };
+    DungeonLevel.prototype.set = function (x, y, cell) {
+        this.cell[x][y] = cell;
+    };
+    DungeonLevel.prototype.getWidth = function () {
+        return this.width;
+    };
+    DungeonLevel.prototype.getHeight = function () {
+        return this.height;
+    };
+    DungeonLevel.prototype.getLevel = function () {
+        return this.level;
+    };
+    DungeonLevel.prototype.openVisibility = function (view, x, y, radius) {
+        for (var xc = x - radius; xc <= x + radius; xc++) {
+            for (var yc = y - radius; yc <= y + radius; yc++) {
+                if (xc >= 0 && yc >= 0 && xc < this.width && yc < this.height) {
+                    view.setCell(xc, yc, this.cell[xc][yc]);
+                }
+            }
+        }
+    };
+    DungeonLevel.prototype.openVisibilityAll = function (view) {
+        for (var x = 0; x < this.getWidth(); x++) {
+            for (var y = 0; y < this.getHeight(); y++) {
+                view.setCell(x, y, this.cell[x][y]);
+            }
+        }
+    };
+    return DungeonLevel;
+}());
 var GameStatus = (function () {
     function GameStatus() {
         this.x = 0;
@@ -209,4 +324,39 @@ var GameStatus = (function () {
         this.killCount = 0;
     }
     return GameStatus;
+}());
+var Monster = (function () {
+    function Monster(view, x, y) {
+        this.x = x;
+        this.y = y;
+        this.view = view;
+        this.getMonster();
+        this.actorID = view.addActor(x, y, this.name);
+    }
+    Monster.prototype.destroy = function () {
+        this.view.removeActor(this.actorID);
+        this.view = null;
+    };
+    Monster.prototype.getMonster = function () {
+        var n = Math.floor(Math.random() * 6);
+        if (n == 0) {
+            this.name = "spider";
+        }
+        if (n == 1) {
+            this.name = "dragon";
+        }
+        if (n == 2) {
+            this.name = "grue";
+        }
+        if (n == 3) {
+            this.name = "nuibus";
+        }
+        if (n == 4) {
+            this.name = "snake";
+        }
+        if (n == 5) {
+            this.name = "wyvern";
+        }
+    };
+    return Monster;
 }());

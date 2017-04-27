@@ -29,17 +29,6 @@ interface IView {
      * 
      * @memberOf IView
      */
-    addArea(x:number,y:number,width:number,height:number,cell:CELLTYPE): void;
-    /**
-     * Add a game actor (player, monster)
-     * 
-     * @param {number} x 
-     * @param {number} y 
-     * @param {string} sprite 
-     * @returns {number} 
-     * 
-     * @memberOf IView
-     */
     addActor(x:number,y:number,sprite:string) : number;
     /**
      * Remove a game actor
@@ -59,15 +48,4 @@ interface IView {
      * @memberOf IView
      */
     moveActor(actorID:number,x:number,y:number) : void;
-
-    /**
-     * Set cells visibility. (defaults to invisible).
-     * 
-     * @param {number} x 
-     * @param {number} y 
-     * @param {boolean} [isVisible=true] 
-     * 
-     * @memberOf IView
-     */
-    setCellVisible(x:number, y:number,isVisible:boolean) : void;
 }

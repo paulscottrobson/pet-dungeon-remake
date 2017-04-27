@@ -6,15 +6,16 @@ class GameState extends Phaser.State {
 
     init(status:IGameStatus) : void {
         this.status = status;
-        var r:IView = new GameView(this.game,64);
-        r.addArea(0,0,40,23,CELLTYPE.FRAME);
-        r.addArea(1,1,38,21,CELLTYPE.ROCK);
-        r.addArea(3,3,3,4,CELLTYPE.FLOOR);
-        r.setCell(4,4,CELLTYPE.TREASURE);
-        r.setCell(4,4,CELLTYPE.PIT);
-        var n:number = r.addActor(1,1,"player");
-        //r.removeActor(n);
-        r.moveActor(n,3,7);
+        var r:IView = new GameView(this.game,24);
+        var l:ILevel = new DungeonLevel(r,1,23,40);
+
+        var p:number[] = l.findSpace(CELLTYPE.PASSAGE);
+        if (p == null) p = l.findSpace(CELLTYPE.FLOOR);
+        r.addActor(p[0],p[1],"player");
+
+        l.openVisibility(r,4,4,2);
+        l.openVisibilityAll(r);
+
     }
 
     create() : void {

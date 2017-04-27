@@ -1,0 +1,76 @@
+#
+#		Line Comments
+#
+90.Start:** PET Dungeon by Brian Sawyer. Reverse Engineered by Paul Robson:Display title page
+140:Create memory for usage by map
+200:Clear map
+250:Find start position 
+260:Open up map area surrounding and enter the game.
+270.MainLoop:*Main loop
+280:Lose energy if wall walking, die if too much.
+290:Convert character to direction offset
+300:Walking in wall
+310:Walked into surrounding frame
+320:Move player then open surrounding space.
+330:Found Gold
+340:Bumped into Monster
+380.CreateMap:*Create map
+400:Work out width and height of new room (width = playerPos, height = prevContents)
+410:Work out coordinates and screen position.
+420:Loop back if off screen
+430:Check it doesn't overlap with any othere room
+450:Fill in the room with floor space
+460:Check if can open a path south.
+490:Check if can open a path east
+520:Put a monster in the room somewhere.
+530.NextRoom:If time available, go do next room
+540:Put 11 pieces of gold
+550:Find empty slot
+560:Put it there
+570:Draw frame around the edges.
+600.OpenCheckGold:*Open up visuals and check gold if close.:Smaller area to open out.
+610:Wider area if searching, though this appears not to actually work.
+640:Work through horizontally and vertically opening up
+660:Exit loop if neither monster nor gold.
+680:Gold found nearby
+710.MonsterFound:Search has revealed monster
+720:Identify monster type and strength
+780:Calculate strength
+790:If monster current then send it back to "sleep".
+800:Wake up current monster
+810:Display warning message
+820.EndSearch:End the opening loop
+830:MonsterMove:*Move Monster:Chase monster vertically
+850:Move vertically, cannot pass through door.
+860:Chase monster horizontally
+880:Move horizontally, cannot pass through door.
+890:Hit player ?
+960:If hit player
+970:Then wake up monster and attack
+990:(not used)
+1000.MonsterAttack:*Player has attacked monster
+1010:Calculate damage and adjust HP levels
+1020:Check player dead
+1030:If monster twice as strong it offers a bribe.
+1080:Accept offer ?
+1090:If monster still alive display and exit
+1110:Award HP, Exp
+1130:Level up.
+1160.DisplayMHP:Display monster HP and exit.
+1190.PlayerDead:*Player has died
+1200.FoundGold:*Player has found gold
+1240.GetCommand:*Get Command:Time for message
+1250:Update status
+1260:Display you may move if message timed out
+1270:Wait for command
+1280:Convert to ASCII code ; wall walking on shift key
+1290:Recover HP if do nothing.
+1300:Directional move
+1310:Searching
+1340.UpdateStatus:*Update the player status
+1350.GameWon:*Player has won
+1410.ClearWithDelayIfNeeded:Clear display, but delay if needed so message can be read
+1430.ClearWith3SDelay:Clear with a three second delay
+1500.GetAnswer:*Get yes or no.
+60300.SetUpKeyboard:*Set up keyboard input.
+62000.TitlePage:* Display title page

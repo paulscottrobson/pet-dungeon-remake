@@ -1,0 +1,61 @@
+a 			command 		keyboard command
+ax 			screen 			Screen memory
+bl 			topSpace 		Top space in chars
+cs 			colSize 		Col size for game area
+ch 			monsterDamage	Monster damage
+cc 			monsterHP 		Monster Hit Points
+e 			monster 		Position of current waking monster
+e$ 			monsterName$ 	Monster name.
+er$ 		clear2$ 		Clear top line, write to line 2
+e2$ 		clear1$ 		Clear top line, write to line 1
+et 			oldMC 			old monster contents ?
+ex 			experience 		Player experience
+fg 			searchGold 		Gold found when searching, stops repeated "Gold is near"
+gn 			goldNear 		Gold nearby.
+h1 			playerDamage 	Player damage
+hg 			goldToFind 		Amount of gold to find.
+hp 			hitPoints 		Player hit points
+iu 			message 	 	Message present
+k1 			goldFound 		Amount of gold found.
+l 			playerPos 		Player position on screen
+l$ 			answer$ 		Answer key type
+mg 			gold 			Gold carried
+nm$ 		issue$ 			Issue number of CURSOR Magazine
+pg$ 		programName$	Name of program
+pw 			power 			Player power
+px 			lastExperience	Experience when level last raised.
+q 			offset 			Movement offset
+qk 			kbd1 			Makes keyboard interactive
+qm 			kbd2 			Makes keyboard interactive
+qp 			kbd3 			Makes keyboard interactive
+qq 			prevMonstCont 	Previous monster contents
+rs 			rowSize 		Row size for game area
+s 			monMoveCount 	Counter until monster can move
+sm 			searching 		Open out search area from 3x3 to 5x5
+sx 			wallWalking 	Set if walking through walls.
+sz 			gameAreaSize	Size of game area
+ti$ 		clock$ 			Pet Clock
+ti 			clock 			Pet Clock
+tm 			time 			time in construction and game.
+ts 			map 			Map memory
+w 			prevContents 	What was held before.
+z			kills 			Number of monsters killed.
+zt 			flashTimer 		Flash for keyboard waiting timer
+zc 			flashCharacter  Flash for keyboard waiting character
+
+#
+#	PETSCII Characters
+#
+#	32 		Space in the dungeon you can't walk in (rock)
+#	86 		Spider
+#	87		Grue
+#	88		Dragon
+#	89		Snake
+#	90		Nuibus
+#	91 		Wyvern
+# 	102 	Door (in and out of rooms)
+# 	127 	Frame of level.
+#	135 	Gold.
+#	160 	Passageway/Room Floor
+# 	209 	Player character
+

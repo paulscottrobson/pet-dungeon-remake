@@ -6,6 +6,9 @@ class GameState extends Phaser.State {
     private view:IView;
     private playerActor:number;
     private level:ILevel;
+    private moveState:boolean;
+    private negotiateMonster:IMonster;
+    private hasLost:boolean;
 
     init(status:IGameStatus) : void {
         this.status = status;
@@ -14,7 +17,8 @@ class GameState extends Phaser.State {
     create() : void {
         this.view = new GameView(this.game,80);
         this.level = new DungeonLevel(this.view,this.status,40,23,false);
-
+        this.moveState = true;
+        this.hasLost = false;
         if (this.status.firstLevelVisited) {
             var p:number[] = this.level.findSpace(CELLTYPE.PASSAGE);
             if (p == null) p = this.level.findSpace(CELLTYPE.FLOOR);
@@ -33,10 +37,18 @@ class GameState extends Phaser.State {
 
     destroy() : void {
         this.view = this.level = null;
+        this.negotiateMonster = null;
     }
 
     update() : void {    
         this.view.setCameraOn(this.playerActor);
+        if (this.status.hitPoints <= 1) {
+            // If first time dead show game over message.
+            if (!this.hasLost) {
+                this.hasLost = true;
+                this.view.showGameOver();
+            }
+        }
     }
 
     /**
@@ -49,7 +61,16 @@ class GameState extends Phaser.State {
      * @memberOf GameState
      */
     inputHandler(obj:any,dx:number,dy:number) : void {
-        this.movePlayer(dx,dy);
+        // Moving, i.e. normal state
+        if (this.moveState) {
+            // Only move if alive.
+            if (this.status.hitPoints > 1) {
+                this.movePlayer(dx,dy);
+            }
+            return;
+        }
+        // Waiting for surrender option.
+        // TODO: Check surrender 
     }
 
     /**
@@ -88,7 +109,13 @@ class GameState extends Phaser.State {
                 this.openAndGenerateWarnings();
                 this.checkGold();
                 this.view.updateStatus(this.status);
-                // TODO: Hit monster
+                // Check for monster attack.
+                var monster:IMonster = <IMonster>ActorObject.find(this.level.getMonsterList(),
+                                                                  this.status.xPlayer,
+                                                                  this.status.yPlayer);
+                if (monster != null) {
+                    this.fight(monster);
+                }                                                                  
             }
         }
     }
@@ -167,5 +194,61 @@ class GameState extends Phaser.State {
             this.view.write("Gold is near!");
             this.status.lastLookGold = treasureScanned;
         }
+    }
+
+    /**
+     * Fight with monster.
+     * 
+     * @private
+     * @param {IMonster} monster 
+     * 
+     * @memberOf GameState
+     */
+    private fight(monster:IMonster) : void {
+        this.view.write("An attack !");
+        // Calculate damage done.
+        var power = this.status.hitPoints + this.status.experience;
+        var playerDamage:number = Math.random() * monster.getStrength() / 2 + 
+                                  monster.getStrength() / 4
+        var monsterDamage:number = Math.random() * power / 2 + power / 4;
+        // Adjust strengths.
+        monster.setStrength(Math.floor(monster.getStrength() - monsterDamage));
+        this.status.hitPoints = this.status.hitPoints - playerDamage;
+        this.view.updateStatus(this.status);
+        // End fight if HP run out, you have died.
+        if (this.status.hitPoints < 1) { return; }
+        // Check if monster dead
+        if (monster.getStrength() > 1) {
+            this.view.write(monster.name+" now "+monster.getStrength().toString()+" hp");
+
+            // TODO: Check for gold handout/surrender
+
+            // Move the monster away from the player.
+            do {
+                monster.xCell = this.status.xPlayer + (Math.floor(Math.random() * 3)) - 1;
+                monster.yCell = this.status.yPlayer + (Math.floor(Math.random() * 3)) - 1;
+            } while (this.level.get(monster.xCell,monster.yCell) != CELLTYPE.FLOOR ||
+                    (monster.xCell == this.status.xPlayer && monster.yCell == this.status.yPlayer));
+            this.view.moveActor(monster.actorID,monster.xCell,monster.yCell);
+            return;
+        }
+        // Monster has died.
+        this.view.write(monster.name+" is dead!");
+        
+        // Update EXP and Kill Count
+        this.status.experience += monster.getExperience();
+        this.status.killCount++;
+
+        // Time to be uprated
+        if (this.status.experience > this.status.lastExperience * 2) {
+            this.status.lastExperience = this.status.experience;
+            this.status.hitPoints = this.status.hitPoints * 3;
+            this.view.write("HP have been raised.");
+        }
+        // Remove the monster object.
+        monster.destroy();
+        ActorObject.removeListItem(this.level.getMonsterList(),monster);
+        // Update the status.
+        this.view.updateStatus(this.status);
     }
 }    

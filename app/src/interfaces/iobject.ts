@@ -2,6 +2,13 @@
 
 interface IObject {
     /**
+     * ID of actor.
+     * 
+     * @type {number}
+     * @memberOf IObject
+     */
+    actorID:number;
+    /**
      * x Cell position
      * 
      * @type {number}

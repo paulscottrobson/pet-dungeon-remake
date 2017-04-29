@@ -14,8 +14,11 @@ class Monster extends ActorObject implements IMonster {
 
     public initialiseObject(view:IView,status:IGameStatus,x:number,y:number) {
         var n:number = Math.floor(Math.random() * 6);
+
         this.asleep = true;
         this.fullHealth = -1;
+        this.strength = -1;
+
         if (n == 0) {
             this.name = "spider";
             this.basePower = 3;
@@ -68,5 +71,8 @@ class Monster extends ActorObject implements IMonster {
         return !this.asleep;
     }
 
+    public getExperience():number {
+        return this.basePower;
+    }
 }
 

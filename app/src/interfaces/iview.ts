@@ -95,4 +95,13 @@ interface IView {
      * @memberOf IView
      */
     onClickGameSpace:Phaser.Signal;
+
+    /**
+     * Show game over etc. message
+     * 
+     * 
+     * @memberOf IView
+     */
+    showGameOver():void;
+
 }

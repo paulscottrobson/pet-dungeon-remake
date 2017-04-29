@@ -19,6 +19,8 @@ var GameState = (function (_super) {
     GameState.prototype.create = function () {
         this.view = new GameView(this.game, 80);
         this.level = new DungeonLevel(this.view, this.status, 40, 23, false);
+        this.moveState = true;
+        this.hasLost = false;
         if (this.status.firstLevelVisited) {
             var p = this.level.findSpace(CELLTYPE.PASSAGE);
             if (p == null)
@@ -35,12 +37,24 @@ var GameState = (function (_super) {
     };
     GameState.prototype.destroy = function () {
         this.view = this.level = null;
+        this.negotiateMonster = null;
     };
     GameState.prototype.update = function () {
         this.view.setCameraOn(this.playerActor);
+        if (this.status.hitPoints <= 1) {
+            if (!this.hasLost) {
+                this.hasLost = true;
+                this.view.showGameOver();
+            }
+        }
     };
     GameState.prototype.inputHandler = function (obj, dx, dy) {
-        this.movePlayer(dx, dy);
+        if (this.moveState) {
+            if (this.status.hitPoints > 1) {
+                this.movePlayer(dx, dy);
+            }
+            return;
+        }
     };
     GameState.prototype.movePlayer = function (dx, dy) {
         if (dx == 0 && dy == 0) {
@@ -63,6 +77,10 @@ var GameState = (function (_super) {
                 this.openAndGenerateWarnings();
                 this.checkGold();
                 this.view.updateStatus(this.status);
+                var monster = ActorObject.find(this.level.getMonsterList(), this.status.xPlayer, this.status.yPlayer);
+                if (monster != null) {
+                    this.fight(monster);
+                }
             }
         }
     };
@@ -115,6 +133,40 @@ var GameState = (function (_super) {
             this.view.write("Gold is near!");
             this.status.lastLookGold = treasureScanned;
         }
+    };
+    GameState.prototype.fight = function (monster) {
+        this.view.write("An attack !");
+        var power = this.status.hitPoints + this.status.experience;
+        var playerDamage = Math.random() * monster.getStrength() / 2 +
+            monster.getStrength() / 4;
+        var monsterDamage = Math.random() * power / 2 + power / 4;
+        monster.setStrength(Math.floor(monster.getStrength() - monsterDamage));
+        this.status.hitPoints = this.status.hitPoints - playerDamage;
+        this.view.updateStatus(this.status);
+        if (this.status.hitPoints < 1) {
+            return;
+        }
+        if (monster.getStrength() > 1) {
+            this.view.write(monster.name + " now " + monster.getStrength().toString() + " hp");
+            do {
+                monster.xCell = this.status.xPlayer + (Math.floor(Math.random() * 3)) - 1;
+                monster.yCell = this.status.yPlayer + (Math.floor(Math.random() * 3)) - 1;
+            } while (this.level.get(monster.xCell, monster.yCell) != CELLTYPE.FLOOR ||
+                (monster.xCell == this.status.xPlayer && monster.yCell == this.status.yPlayer));
+            this.view.moveActor(monster.actorID, monster.xCell, monster.yCell);
+            return;
+        }
+        this.view.write(monster.name + " is dead!");
+        this.status.experience += monster.getExperience();
+        this.status.killCount++;
+        if (this.status.experience > this.status.lastExperience * 2) {
+            this.status.lastExperience = this.status.experience;
+            this.status.hitPoints = this.status.hitPoints * 3;
+            this.view.write("HP have been raised.");
+        }
+        monster.destroy();
+        ActorObject.removeListItem(this.level.getMonsterList(), monster);
+        this.view.updateStatus(this.status);
     };
     return GameState;
 }(Phaser.State));
@@ -295,11 +347,11 @@ var GameView = (function (_super) {
     GameView.prototype.createStatusDisplay = function () {
         for (var x = 0; x < 2; x++) {
             for (var y = 0; y < 3; y++) {
-                var txt = this.game.add.bitmapText(0, 0, "font", "000", 32, this.topGroup);
-                txt.x = -(1.1 - x) * (txt.width) + this.game.width;
+                var txt = this.game.add.bitmapText(0, 0, "font", "0000", 32, this.topGroup);
+                txt.x = (0.1 + x) * (txt.width);
                 txt.y = (0.2 + y) * txt.height * 1.1;
                 txt.tint = (x == 0) ? 0xFFFF00 : 0x00FFFF;
-                txt.anchor.setTo(1, 0);
+                txt.anchor.setTo(0, 0);
                 if (x == 0) {
                     txt.text = ["HP:", "XP:", "GP:"][y];
                 }
@@ -314,6 +366,11 @@ var GameView = (function (_super) {
         this.status[0].text = Math.floor(Math.max(0, status.hitPoints + 0.5)).toString();
         this.status[1].text = (status.experience).toString();
         this.status[2].text = (status.gold).toString();
+    };
+    GameView.prototype.showGameOver = function () {
+        var txt = this.game.add.bitmapText(this.game.width / 2, this.scroller.y / 2, "font", "Game Over", 48, this.topGroup);
+        txt.anchor.setTo(0.5, 0.5);
+        txt.tint = 0xFF8000;
     };
     return GameView;
 }(Phaser.Group));
@@ -584,6 +641,7 @@ var Monster = (function (_super) {
         var n = Math.floor(Math.random() * 6);
         this.asleep = true;
         this.fullHealth = -1;
+        this.strength = -1;
         if (n == 0) {
             this.name = "spider";
             this.basePower = 3;
@@ -629,6 +687,9 @@ var Monster = (function (_super) {
     };
     Monster.prototype.isAwake = function () {
         return !this.asleep;
+    };
+    Monster.prototype.getExperience = function () {
+        return this.basePower;
     };
     return Monster;
 }(ActorObject));

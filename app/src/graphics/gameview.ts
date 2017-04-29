@@ -67,13 +67,17 @@ class GameView extends Phaser.Group implements IView {
 
     clickHandler(obj:any,pointer:Phaser.Pointer) {
         if (this.cameraActor >= 0) {
+            // Figure out offset
             var x:number = pointer.x-this.cellSize/2-this.actors[this.cameraActor].getBounds().x;
             var y:number = pointer.y-this.cellSize/2-this.actors[this.cameraActor].getBounds().y;
+            // Clamp to -1 0 1
             x = Math.min(Math.max(-1,Math.round(x / this.cellSize)),1);
             y = Math.min(Math.max(-1,Math.round(y / this.cellSize)),1);
+            // Notify.
             this.onClickGameSpace.dispatch(this,x,y,pointer);
         }
     }
+
     write(s:string):void {
         this.scroller.write(s);
     }    
@@ -153,12 +157,12 @@ class GameView extends Phaser.Group implements IView {
         for (var x:number = 0;x < 2;x++) {
             for (var y:number = 0;y < 3;y++) {
                 var txt:Phaser.BitmapText = this.game.add.bitmapText(0,0,
-                                                                     "font","000",
+                                                                     "font","0000",
                                                                      32,this.topGroup);
-                txt.x = -(1.1-x) * (txt.width) + this.game.width;                                                                     
+                txt.x = (0.1+x) * (txt.width);
                 txt.y = (0.2+y) * txt.height * 1.1;
                 txt.tint = (x == 0) ? 0xFFFF00 : 0x00FFFF;
-                txt.anchor.setTo(1,0);
+                txt.anchor.setTo(0,0);
                 if (x == 0) {
                     txt.text = ["HP:","XP:","GP:"][y];
                 } else {
@@ -173,5 +177,12 @@ class GameView extends Phaser.Group implements IView {
         this.status[0].text = Math.floor(Math.max(0,status.hitPoints+0.5)).toString();
         this.status[1].text = (status.experience).toString();
         this.status[2].text = (status.gold).toString();
+    }
+
+    showGameOver():void {
+        var txt:Phaser.BitmapText = this.game.add.bitmapText(this.game.width/2,this.scroller.y/2,
+                                                             "font","Game Over",48,this.topGroup);
+        txt.anchor.setTo(0.5,0.5);                                                             
+        txt.tint = 0xFF8000;
     }
 }

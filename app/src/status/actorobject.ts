@@ -4,7 +4,7 @@ abstract class ActorObject implements IObject {
     public xCell:number;
     public yCell:number;
     private view:IView;
-    private actorID:number;
+    public actorID:number;
 
     constructor(view:IView,status:IGameStatus,x:number,y:number) {
         this.xCell = x;this.yCell = y;this.view = view;

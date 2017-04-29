@@ -2,7 +2,7 @@
 
 interface IView {
     /**
-     * Destroy a rendered object
+     * Destroy the view object (called automatically on scene end)
      * 
      * 
      * @memberOf IView
@@ -71,4 +71,28 @@ interface IView {
      * @memberOf IView
      */
     setCameraOn(actorID:number) : void;
+    /**
+     * Update the status display.
+     * 
+     * @param {IGameStatus} status 
+     * 
+     * @memberOf IView
+     */
+    updateStatus(status:IGameStatus): void;
+    /**
+     * Write to the status display
+     * 
+     * @param {string} s 
+     * 
+     * @memberOf IView
+     */
+    write(s:string):void;
+    /**
+     * Signal raised when click on game area. Sends (view,dx,dy,pointer) where
+     * dx/dy are -1 0 1 , pointer is Phaser.pointer
+     * 
+     * @type {Phaser.Signal}
+     * @memberOf IView
+     */
+    onClickGameSpace:Phaser.Signal;
 }

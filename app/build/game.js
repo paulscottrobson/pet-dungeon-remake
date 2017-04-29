@@ -29,6 +29,7 @@ var GameState = (function (_super) {
         }
         this.playerActor = this.view.addActor(this.status.xPlayer, this.status.yPlayer, "player");
         this.level.openVisibility(this.view, this.status.xPlayer, this.status.yPlayer, 1);
+        this.view.updateStatus(this.status);
     };
     GameState.prototype.destroy = function () {
         this.view = this.level = null;
@@ -105,9 +106,12 @@ var GameView = (function (_super) {
         var _this = _super.call(this, game) || this;
         _this.actors = [];
         _this.cells = [];
+        _this.status = [];
         _this.cellSize = cellSize;
         _this.tileName = [];
         _this.nextActorID = 0;
+        _this.cameraActor = -1;
+        _this.onClickGameSpace = new Phaser.Signal();
         _this.tileName[CELLTYPE.ROCK] = "rock";
         _this.tileName[CELLTYPE.FRAME] = "frame";
         _this.tileName[CELLTYPE.DOOR] = "door";
@@ -117,18 +121,41 @@ var GameView = (function (_super) {
         _this.tileName[CELLTYPE.STAIRSD] = "stairsd";
         _this.tileName[CELLTYPE.STAIRSU] = "stairsu";
         _this.tileName[CELLTYPE.TREASURE] = "treasure";
+        var tile = _this.game.add.tileSprite(0, 0, 32, 32, "sprites", "bgrtile", _this);
+        tile.scale.x = tile.scale.y = _this.cellSize / 32;
+        tile.width = _this.game.width;
+        tile.height = _this.game.height;
+        tile.inputEnabled = true;
+        tile.events.onInputDown.add(_this.clickHandler, _this);
+        _this.createStatusDisplay();
+        _this.scrollGroup = new Phaser.Group(_this.game, _this);
+        _this.scroller = new TextScroller(_this.game, _this.game.width, _this.game.height / 4);
+        _this.add(_this.scroller);
+        _this.scroller.y = _this.game.height - _this.scroller.height;
         return _this;
     }
     GameView.prototype.destroy = function () {
-        this.actors = this.cells = null;
+        this.onClickGameSpace = this.scroller = this.actors = this.cells = this.status = null;
         _super.prototype.destroy.call(this);
+    };
+    GameView.prototype.clickHandler = function (obj, pointer) {
+        if (this.cameraActor >= 0) {
+            var x = pointer.x - this.cellSize / 2 - this.actors[this.cameraActor].getBounds().x;
+            var y = pointer.y - this.cellSize / 2 - this.actors[this.cameraActor].getBounds().y;
+            x = Math.min(Math.max(-1, Math.round(x / this.cellSize)), 1);
+            y = Math.min(Math.max(-1, Math.round(y / this.cellSize)), 1);
+            console.log(x, y, x == 0, y == 0);
+            this.onClickGameSpace.dispatch(this, x, y, pointer);
+        }
+    };
+    GameView.prototype.write = function (s) {
+        this.scroller.write(s);
     };
     GameView.prototype.setCell = function (x, y, cell) {
         this.cells[x] = this.cells[x] || [];
         if (this.cells[x][y] == null) {
             var img;
-            img = this.game.add.image(x * this.cellSize, y * this.cellSize, "sprites", this.tileName[cell], this);
-            img.sendToBack();
+            img = this.game.add.image(x * this.cellSize, y * this.cellSize, "sprites", this.tileName[cell], this.scrollGroup);
             this.cells[x][y] = img;
             this.setCellVisibility(x, y, false);
         }
@@ -136,16 +163,17 @@ var GameView = (function (_super) {
             this.cells[x][y].loadTexture("sprites", this.tileName[cell]);
         }
         this.cells[x][y].width = this.cells[x][y].height = this.cellSize;
+        this.cells[x][y].sendToBack();
     };
     GameView.prototype.setCellVisibility = function (x, y, isVisible) {
         this.cells[x] = this.cells[x] || [];
         if (this.cells[x][y] == null) {
             this.setCell(x, y, CELLTYPE.ROCK);
         }
-        this.cells[x][y].alpha = isVisible ? 1.0 : 0.33;
+        this.cells[x][y].alpha = isVisible ? 1.0 : 0.3;
     };
     GameView.prototype.addActor = function (x, y, sprite) {
-        var spr = this.game.add.sprite(x * this.cellSize, y * this.cellSize, "sprites", sprite, this);
+        var spr = this.game.add.sprite(x * this.cellSize, y * this.cellSize, "sprites", sprite, this.scrollGroup);
         spr.width = spr.height = this.cellSize;
         var n = this.nextActorID++;
         this.actors[n] = spr;
@@ -178,13 +206,92 @@ var GameView = (function (_super) {
         if (this.actors[actorID] == null) {
             throw Error("Unknown actor ID");
         }
-        this.x = -this.actors[actorID].x - this.cellSize / 2 + this.game.width / 2;
-        this.y = -this.actors[actorID].y - this.cellSize / 2 + this.game.height / 2;
+        this.scrollGroup.x = -this.actors[actorID].x - this.cellSize / 2 + this.game.width / 2;
+        this.scrollGroup.y = -this.actors[actorID].y - this.cellSize / 2 + this.scroller.y / 2;
+        this.cameraActor = actorID;
+    };
+    GameView.prototype.createStatusDisplay = function () {
+        for (var x = 0; x < 2; x++) {
+            for (var y = 0; y < 3; y++) {
+                var txt = this.game.add.bitmapText(0, 0, "font", "000", 32, this);
+                txt.x = -(1.1 - x) * (txt.width) + this.game.width;
+                txt.y = (0.2 + y) * txt.height * 1.1;
+                txt.tint = (x == 0) ? 0xFFFF00 : 0x00FFFF;
+                txt.anchor.setTo(1, 0);
+                if (x == 0) {
+                    txt.text = ["HP:", "XP:", "GP:"][y];
+                }
+                else {
+                    txt.text = "0";
+                    this.status[y] = txt;
+                }
+            }
+        }
+    };
+    GameView.prototype.updateStatus = function (status) {
+        this.status[0].text = (status.hitPoints).toString();
+        this.status[1].text = (status.experience).toString();
+        this.status[2].text = (status.gold).toString();
     };
     return GameView;
 }(Phaser.Group));
-GameView.HIDDEN_ALPHA = 0.4;
-GameView.SHOW_ALPHA = 1.0;
+var TextScroller = (function (_super) {
+    __extends(TextScroller, _super);
+    function TextScroller(game, width, height) {
+        var _this = _super.call(this, game) || this;
+        _this.yCursor = 0;
+        _this.xCursor = 0;
+        _this.speedMod = 0;
+        var scr = game.add.image(0, 0, "sprites", "scroll", _this);
+        scr.width = width;
+        scr.height = height;
+        _this.lines = [];
+        _this.queue = [];
+        for (var n = 0; n < TextScroller.LINES; n++) {
+            _this.lines[n] = game.add.bitmapText(width * 0.14, (n + 1) * height / (TextScroller.LINES + 1), "font", "", 32, _this);
+            _this.lines[n].tint = 0x000000;
+            _this.lines[n].anchor.setTo(0, 0.5);
+        }
+        _this.xCursor = 0;
+        _this.yCursor = 0;
+        _this.toWrite = "";
+        return _this;
+    }
+    TextScroller.prototype.write = function (s) {
+        this.queue.push(s);
+        ;
+    };
+    TextScroller.prototype.nextLine = function () {
+        this.yCursor++;
+        if (this.yCursor == TextScroller.LINES) {
+            for (var i = 0; i < TextScroller.LINES - 1; i++) {
+                this.lines[i].text = this.lines[i + 1].text;
+            }
+            this.yCursor = TextScroller.LINES - 1;
+        }
+        this.toWrite = "";
+        this.xCursor = 0;
+        this.lines[this.yCursor].text = "";
+    };
+    TextScroller.prototype.update = function () {
+        this.speedMod++;
+        if (this.speedMod % 4 == 0 && this.xCursor < this.toWrite.length) {
+            this.xCursor++;
+            this.lines[this.yCursor].text = this.toWrite.slice(0, this.xCursor);
+            if (this.xCursor == this.toWrite.length) {
+                this.nextLine();
+            }
+        }
+        if (this.xCursor == 0 && this.toWrite == "" && this.queue.length > 0) {
+            this.toWrite = this.queue.shift();
+        }
+    };
+    TextScroller.prototype.destroy = function () {
+        _super.prototype.destroy.call(this);
+    };
+    return TextScroller;
+}(Phaser.Group));
+TextScroller.LINES = 4;
 var ActorObject = (function () {
     function ActorObject(view, x, y) {
         this.xCell = x;
@@ -214,7 +321,8 @@ var CELLTYPE;
     CELLTYPE[CELLTYPE["DOOR"] = 8] = "DOOR";
 })(CELLTYPE || (CELLTYPE = {}));
 var DungeonLevel = (function () {
-    function DungeonLevel(view, level, width, height) {
+    function DungeonLevel(view, level, width, height, stairs) {
+        if (stairs === void 0) { stairs = false; }
         this.width = width;
         this.height = height;
         this.level = level;
@@ -232,10 +340,12 @@ var DungeonLevel = (function () {
         for (var n = 0; n < roomCount; n++) {
             this.drawRoom(view);
         }
-        var pos = this.findSpace(CELLTYPE.FLOOR);
-        this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSD;
-        var pos = this.findSpace(CELLTYPE.FLOOR);
-        this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSU;
+        if (stairs) {
+            var pos = this.findSpace(CELLTYPE.FLOOR);
+            this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSD;
+            var pos = this.findSpace(CELLTYPE.FLOOR);
+            this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSU;
+        }
         var goldCount = Math.max(2, Math.round(width * height) / (40 * 23) * 11);
         for (var n = 0; n < goldCount; n++) {
             var pos = this.findSpace(CELLTYPE.FLOOR);
@@ -362,6 +472,7 @@ var DungeonLevel = (function () {
 var GameStatus = (function () {
     function GameStatus() {
         this.firstLevelVisited = true;
+        this.experience = 0;
         this.xPlayer = 0;
         this.yPlayer = 0;
         this.level = 1;

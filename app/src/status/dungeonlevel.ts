@@ -8,7 +8,7 @@ class DungeonLevel implements ILevel {
     private monsters:IMonster[];
     private treasures:ITreasure[];
 
-    constructor(view:IView,level:number,width:number,height:number) {
+    constructor(view:IView,level:number,width:number,height:number,stairs:boolean = false) {
         // Save information
         this.width = width;this.height = height;this.level = level;
         this.monsters = [];this.treasures = [];
@@ -28,10 +28,12 @@ class DungeonLevel implements ILevel {
             this.drawRoom(view);
         }
         // Stairs
-        var pos:number[] = this.findSpace(CELLTYPE.FLOOR);
-        this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSD;
-        var pos:number[] = this.findSpace(CELLTYPE.FLOOR);
-        this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSU;
+        if (stairs) {
+            var pos:number[] = this.findSpace(CELLTYPE.FLOOR);
+            this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSD;
+            var pos:number[] = this.findSpace(CELLTYPE.FLOOR);
+            this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSU;
+        }
         // Gold
         var goldCount = Math.max(2,Math.round(width*height)/(40*23)*11);
         for (var n = 0;n < goldCount;n++) {

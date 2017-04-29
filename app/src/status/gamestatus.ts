@@ -15,6 +15,7 @@ class GameStatus implements IGameStatus {
     
     constructor() {
         this.firstLevelVisited = true;
+        this.experience = 0;
         this.xPlayer = 0;
         this.yPlayer = 0;
         this.level = 1;

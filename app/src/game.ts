@@ -25,6 +25,7 @@ class GameState extends Phaser.State {
                                               this.status.yPlayer,"player");
 
         this.level.openVisibility(this.view,this.status.xPlayer,this.status.yPlayer,1);
+        this.view.updateStatus(this.status);
         //l.openVisibilityAll(r);
     }
 

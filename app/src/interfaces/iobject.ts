@@ -35,5 +35,12 @@ interface IObject {
      * @memberOf IObject
      */
     initialiseObject(view:IView,status:IGameStatus,x:number,y:number):void;
+    /**
+     * Delete the object.
+     * 
+     * 
+     * @memberOf IObject
+     */
+    destroy() : void;
 }
 

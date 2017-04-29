@@ -86,12 +86,31 @@ class GameState extends Phaser.State {
                 this.status.yPlayer = y;
                 this.view.moveActor(this.playerActor,x,y);
                 this.openAndGenerateWarnings();
+                this.checkGold();
                 this.view.updateStatus(this.status);
-                // TODO: Hit monster, Hit diamonds.
+                // TODO: Hit monster
             }
         }
     }
 
+    /**
+     * See if there is a treasure chest here, if so grab its gold and remove it.
+     * 
+     * @private
+     * 
+     * @memberOf GameState
+     */
+    private checkGold(): void {
+        var treasure:ITreasure = <ITreasure>ActorObject.find(this.level.getTreasureList(),
+                                                             this.status.xPlayer,this.status.yPlayer);
+        if (treasure != null) {
+            var gp:number = treasure.getGold();
+            this.view.write("You found "+gp.toString()+" gp.");
+            this.status.gold += gp;
+            treasure.destroy();
+            ActorObject.removeListItem(this.level.getTreasureList(),treasure);
+        }                                                             
+    }
     /**
      * Scanning. Count treasure nearby and announce if rising. Look at nearby monsters
      * and wake them up or put them to sleep accordingly. Open display up.

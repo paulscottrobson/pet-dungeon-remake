@@ -61,8 +61,19 @@ var GameState = (function (_super) {
                 this.status.yPlayer = y;
                 this.view.moveActor(this.playerActor, x, y);
                 this.openAndGenerateWarnings();
+                this.checkGold();
                 this.view.updateStatus(this.status);
             }
+        }
+    };
+    GameState.prototype.checkGold = function () {
+        var treasure = ActorObject.find(this.level.getTreasureList(), this.status.xPlayer, this.status.yPlayer);
+        if (treasure != null) {
+            var gp = treasure.getGold();
+            this.view.write("You found " + gp.toString() + " gp.");
+            this.status.gold += gp;
+            treasure.destroy();
+            ActorObject.removeListItem(this.level.getTreasureList(), treasure);
         }
     };
     GameState.prototype.openAndGenerateWarnings = function (range) {
@@ -193,17 +204,19 @@ var GameView = (function (_super) {
         tile.scale.x = tile.scale.y = _this.cellSize / 32;
         tile.width = _this.game.width;
         tile.height = _this.game.height;
+        _this.scrollGroup = new Phaser.Group(_this.game, _this);
+        _this.topGroup = new Phaser.Group(_this.game, _this);
         tile.inputEnabled = true;
         tile.events.onInputDown.add(_this.clickHandler, _this);
         _this.createStatusDisplay();
-        _this.scrollGroup = new Phaser.Group(_this.game, _this);
         _this.scroller = new TextScroller(_this.game, _this.game.width, _this.game.height / 4);
-        _this.add(_this.scroller);
+        _this.topGroup.add(_this.scroller);
         _this.scroller.y = _this.game.height - _this.scroller.height;
         return _this;
     }
     GameView.prototype.destroy = function () {
         this.onClickGameSpace = this.scroller = this.actors = this.cells = this.status = null;
+        this.scrollGroup = this.topGroup = null;
         _super.prototype.destroy.call(this);
     };
     GameView.prototype.clickHandler = function (obj, pointer) {
@@ -263,10 +276,12 @@ var GameView = (function (_super) {
     GameView.prototype.updateActorVisiblity = function () {
         for (var _i = 0, _a = this.actors; _i < _a.length; _i++) {
             var actor = _a[_i];
-            var x = Math.floor(actor.x / this.cellSize);
-            var y = Math.floor(actor.y / this.cellSize);
-            actor.alpha = this.cells[x][y].alpha;
-            actor.visible = this.cells[x][y].visible;
+            if (actor != null) {
+                var x = Math.floor(actor.x / this.cellSize);
+                var y = Math.floor(actor.y / this.cellSize);
+                actor.alpha = this.cells[x][y].alpha;
+                actor.visible = this.cells[x][y].visible;
+            }
         }
     };
     GameView.prototype.setCameraOn = function (actorID) {
@@ -280,7 +295,7 @@ var GameView = (function (_super) {
     GameView.prototype.createStatusDisplay = function () {
         for (var x = 0; x < 2; x++) {
             for (var y = 0; y < 3; y++) {
-                var txt = this.game.add.bitmapText(0, 0, "font", "000", 32, this);
+                var txt = this.game.add.bitmapText(0, 0, "font", "000", 32, this.topGroup);
                 txt.x = -(1.1 - x) * (txt.width) + this.game.width;
                 txt.y = (0.2 + y) * txt.height * 1.1;
                 txt.tint = (x == 0) ? 0xFFFF00 : 0x00FFFF;
@@ -381,6 +396,13 @@ var ActorObject = (function () {
             }
         }
         return null;
+    };
+    ActorObject.removeListItem = function (objectList, element) {
+        var index = objectList.indexOf(element);
+        if (index < 0) {
+            throw Error("Deleting list element which does not exist");
+        }
+        objectList.splice(index, 1);
     };
     return ActorObject;
 }());

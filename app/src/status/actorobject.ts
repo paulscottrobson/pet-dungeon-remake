@@ -30,5 +30,13 @@ abstract class ActorObject implements IObject {
         }
         return null;
     }
+
+    static removeListItem(objectList:IObject[],element:IObject) {
+        var index:number = objectList.indexOf(element);
+        if (index < 0) { 
+            throw Error("Deleting list element which does not exist");
+        }
+        objectList.splice(index,1);
+    }
 }
 

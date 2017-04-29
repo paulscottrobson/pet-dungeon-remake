@@ -16,6 +16,7 @@ class GameView extends Phaser.Group implements IView {
     private tileName:string[];
     private nextActorID:number; 
     private scrollGroup:Phaser.Group;
+    private topGroup:Phaser.Group;
     private scroller:TextScroller;
     private cameraActor:number;
     public  onClickGameSpace:Phaser.Signal;
@@ -44,21 +45,23 @@ class GameView extends Phaser.Group implements IView {
         var tile:Phaser.TileSprite = this.game.add.tileSprite(0,0,32,32,"sprites","bgrtile",this);
         tile.scale.x = tile.scale.y = this.cellSize / 32;
         tile.width = this.game.width;tile.height = this.game.height;
+        // Group for the tiles and the top
+        this.scrollGroup = new Phaser.Group(this.game,this);
+        this.topGroup = new Phaser.Group(this.game,this);        
         // Enable touch info
         tile.inputEnabled = true;
         tile.events.onInputDown.add(this.clickHandler,this);
         // Status
         this.createStatusDisplay();
-        // Group for the tiles
-        this.scrollGroup = new Phaser.Group(this.game,this);
         // Scrolling info display.
         this.scroller = new TextScroller(this.game,this.game.width,this.game.height/4);        
-        this.add(this.scroller);
+        this.topGroup.add(this.scroller);
         this.scroller.y = this.game.height - this.scroller.height;
     }
 
     destroy(): void {
         this.onClickGameSpace = this.scroller = this.actors = this.cells = this.status = null;
+        this.scrollGroup = this.topGroup = null;
         super.destroy();
     }
 
@@ -128,10 +131,12 @@ class GameView extends Phaser.Group implements IView {
 
     updateActorVisiblity() : void {
         for (var actor of this.actors) {
-            var x:number = Math.floor(actor.x / this.cellSize);
-            var y:number = Math.floor(actor.y / this.cellSize);
-            actor.alpha = this.cells[x][y].alpha;
-            actor.visible = this.cells[x][y].visible;
+            if (actor != null) {
+                var x:number = Math.floor(actor.x / this.cellSize);
+                var y:number = Math.floor(actor.y / this.cellSize);
+                actor.alpha = this.cells[x][y].alpha;
+                actor.visible = this.cells[x][y].visible;
+            }
         }    
     }
 
@@ -149,7 +154,7 @@ class GameView extends Phaser.Group implements IView {
             for (var y:number = 0;y < 3;y++) {
                 var txt:Phaser.BitmapText = this.game.add.bitmapText(0,0,
                                                                      "font","000",
-                                                                     32,this);
+                                                                     32,this.topGroup);
                 txt.x = -(1.1-x) * (txt.width) + this.game.width;                                                                     
                 txt.y = (0.2+y) * txt.height * 1.1;
                 txt.tint = (x == 0) ? 0xFFFF00 : 0x00FFFF;

@@ -9,7 +9,7 @@ interface IView {
      */
     destroy(): void;
     /**
-     * Set a single cell item.
+     * Set a single cell item, make initially invisible
      * 
      * @param {number} x 
      * @param {number} y 
@@ -19,13 +19,22 @@ interface IView {
      */
     setCell(x:number,y:number,cell:CELLTYPE): void;
     /**
-     * Add a rectangular area of cell
+     * Set the cell visibility.
      * 
      * @param {number} x 
      * @param {number} y 
-     * @param {number} width 
-     * @param {number} height 
-     * @param {CELLTYPE} cell 
+     * @param {boolean} isVisible 
+     * 
+     * @memberOf IView
+     */
+    setCellVisibility(x:number,y:number,isVisible:boolean): void;
+    /**
+     * Add an actor at the given position.
+     * 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {string} sprite 
+     * @returns {number} 
      * 
      * @memberOf IView
      */
@@ -48,4 +57,18 @@ interface IView {
      * @memberOf IView
      */
     moveActor(actorID:number,x:number,y:number) : void;
+    /**
+     * Update visibility of all actors. 
+     * 
+     * @memberOf IView
+     */
+    updateActorVisiblity() : void;
+    /**
+     * Arrange so the camera is on the given actor.
+     * 
+     * @param {number} actorID 
+     * 
+     * @memberOf IView
+     */
+    setCameraOn(actorID:number) : void;
 }

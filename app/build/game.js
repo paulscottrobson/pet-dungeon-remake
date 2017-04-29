@@ -15,20 +15,26 @@ var GameState = (function (_super) {
     }
     GameState.prototype.init = function (status) {
         this.status = status;
-        var r = new GameView(this.game, 24);
-        var l = new DungeonLevel(r, 1, 23, 40);
-        var p = l.findSpace(CELLTYPE.PASSAGE);
-        if (p == null)
-            p = l.findSpace(CELLTYPE.FLOOR);
-        r.addActor(p[0], p[1], "player");
-        l.openVisibility(r, 4, 4, 2);
-        l.openVisibilityAll(r);
     };
     GameState.prototype.create = function () {
+        this.view = new GameView(this.game, 80);
+        this.level = new DungeonLevel(this.view, this.status.level, 40, 23);
+        if (this.status.firstLevelVisited) {
+            var p = this.level.findSpace(CELLTYPE.PASSAGE);
+            if (p == null)
+                p = this.level.findSpace(CELLTYPE.FLOOR);
+            this.status.xPlayer = p[0];
+            this.status.yPlayer = p[1];
+            this.status.firstLevelVisited = false;
+        }
+        this.playerActor = this.view.addActor(this.status.xPlayer, this.status.yPlayer, "player");
+        this.level.openVisibility(this.view, this.status.xPlayer, this.status.yPlayer, 1);
     };
     GameState.prototype.destroy = function () {
+        this.view = this.level = null;
     };
     GameState.prototype.update = function () {
+        this.view.setCameraOn(this.playerActor);
     };
     return GameState;
 }(Phaser.State));
@@ -98,7 +104,7 @@ var GameView = (function (_super) {
     function GameView(game, cellSize) {
         var _this = _super.call(this, game) || this;
         _this.actors = [];
-        _this.singleCells = [];
+        _this.cells = [];
         _this.cellSize = cellSize;
         _this.tileName = [];
         _this.nextActorID = 0;
@@ -114,24 +120,29 @@ var GameView = (function (_super) {
         return _this;
     }
     GameView.prototype.destroy = function () {
-        this.actors = this.singleCells = null;
+        this.actors = this.cells = null;
         _super.prototype.destroy.call(this);
     };
     GameView.prototype.setCell = function (x, y, cell) {
-        var key = this.getKey(x, y);
-        if (this.singleCells[key] == null) {
+        this.cells[x] = this.cells[x] || [];
+        if (this.cells[x][y] == null) {
             var img;
             img = this.game.add.image(x * this.cellSize, y * this.cellSize, "sprites", this.tileName[cell], this);
             img.sendToBack();
-            this.singleCells[key] = img;
+            this.cells[x][y] = img;
+            this.setCellVisibility(x, y, false);
         }
         else {
-            this.singleCells[key].loadTexture("sprites", this.tileName[cell]);
+            this.cells[x][y].loadTexture("sprites", this.tileName[cell]);
         }
-        this.singleCells[key].width = this.singleCells[key].height = this.cellSize;
+        this.cells[x][y].width = this.cells[x][y].height = this.cellSize;
     };
-    GameView.prototype.getKey = function (x, y) {
-        return (x + 10) * 1000 + y + 10;
+    GameView.prototype.setCellVisibility = function (x, y, isVisible) {
+        this.cells[x] = this.cells[x] || [];
+        if (this.cells[x][y] == null) {
+            this.setCell(x, y, CELLTYPE.ROCK);
+        }
+        this.cells[x][y].alpha = isVisible ? 1.0 : 0.33;
     };
     GameView.prototype.addActor = function (x, y, sprite) {
         var spr = this.game.add.sprite(x * this.cellSize, y * this.cellSize, "sprites", sprite, this);
@@ -153,18 +164,43 @@ var GameView = (function (_super) {
         }
         this.game.add.tween(this.actors[actorID]).
             to({ x: x * this.cellSize, y: y * this.cellSize }, 250, Phaser.Easing.Default, true);
-        this.updateActorVisibility(actorID, x, y);
     };
-    GameView.prototype.updateActorVisibility = function (actorID, x, y) {
+    GameView.prototype.updateActorVisiblity = function () {
+        for (var _i = 0, _a = this.actors; _i < _a.length; _i++) {
+            var actor = _a[_i];
+            var x = Math.floor(actor.x / this.cellSize);
+            var y = Math.floor(actor.y / this.cellSize);
+            actor.alpha = this.cells[x][y].alpha;
+            actor.visible = this.cells[x][y].visible;
+        }
+    };
+    GameView.prototype.setCameraOn = function (actorID) {
         if (this.actors[actorID] == null) {
             throw Error("Unknown actor ID");
         }
-        this.actors[actorID].alpha = (this.singleCells[this.getKey(x, y)] != null) ? 1.0 : 0.35;
+        this.x = -this.actors[actorID].x - this.cellSize / 2 + this.game.width / 2;
+        this.y = -this.actors[actorID].y - this.cellSize / 2 + this.game.height / 2;
     };
     return GameView;
 }(Phaser.Group));
 GameView.HIDDEN_ALPHA = 0.4;
 GameView.SHOW_ALPHA = 1.0;
+var ActorObject = (function () {
+    function ActorObject(view, x, y) {
+        this.xCell = x;
+        this.yCell = y;
+        this.view = view;
+        this.initialiseObject(view, x, y);
+        this.actorID = view.addActor(x, y, this.getSpriteName());
+    }
+    ActorObject.prototype.initialiseObject = function (view, x, y) {
+    };
+    ActorObject.prototype.destroy = function () {
+        this.view.removeActor(this.actorID);
+        this.view = null;
+    };
+    return ActorObject;
+}());
 var CELLTYPE;
 (function (CELLTYPE) {
     CELLTYPE[CELLTYPE["FLOOR"] = 0] = "FLOOR";
@@ -183,6 +219,7 @@ var DungeonLevel = (function () {
         this.height = height;
         this.level = level;
         this.monsters = [];
+        this.treasures = [];
         this.cell = [];
         for (var x = 0; x < width; x++) {
             this.cell[x] = [];
@@ -202,8 +239,15 @@ var DungeonLevel = (function () {
         var goldCount = Math.max(2, Math.round(width * height) / (40 * 23) * 11);
         for (var n = 0; n < goldCount; n++) {
             var pos = this.findSpace(CELLTYPE.FLOOR);
-            this.cell[pos[0]][pos[1]] = CELLTYPE.TREASURE;
+            var trs = new Treasure(view, pos[0], pos[1]);
+            this.treasures.push(trs);
         }
+        for (var x = 0; x < this.getWidth(); x++) {
+            for (var y = 0; y < this.getHeight(); y++) {
+                view.setCell(x, y, this.cell[x][y]);
+            }
+        }
+        view.updateActorVisiblity();
     }
     DungeonLevel.prototype.findSpace = function (reqd) {
         var x;
@@ -299,45 +343,45 @@ var DungeonLevel = (function () {
         for (var xc = x - radius; xc <= x + radius; xc++) {
             for (var yc = y - radius; yc <= y + radius; yc++) {
                 if (xc >= 0 && yc >= 0 && xc < this.width && yc < this.height) {
-                    view.setCell(xc, yc, this.cell[xc][yc]);
+                    view.setCellVisibility(xc, yc, true);
                 }
             }
         }
+        view.updateActorVisiblity();
     };
     DungeonLevel.prototype.openVisibilityAll = function (view) {
         for (var x = 0; x < this.getWidth(); x++) {
             for (var y = 0; y < this.getHeight(); y++) {
-                view.setCell(x, y, this.cell[x][y]);
+                view.setCellVisibility(x, y, true);
             }
         }
+        view.updateActorVisiblity();
     };
     return DungeonLevel;
 }());
 var GameStatus = (function () {
     function GameStatus() {
-        this.x = 0;
-        this.y = 0;
+        this.firstLevelVisited = true;
+        this.xPlayer = 0;
+        this.yPlayer = 0;
         this.level = 1;
         this.gold = 0;
+        this.lastLookGold = 0;
         this.hitPoints = 50;
         this.lastExperience = 0;
         this.killCount = 0;
     }
     return GameStatus;
 }());
-var Monster = (function () {
-    function Monster(view, x, y) {
-        this.x = x;
-        this.y = y;
-        this.view = view;
-        this.getMonster();
-        this.actorID = view.addActor(x, y, this.name);
+var Monster = (function (_super) {
+    __extends(Monster, _super);
+    function Monster() {
+        return _super !== null && _super.apply(this, arguments) || this;
     }
-    Monster.prototype.destroy = function () {
-        this.view.removeActor(this.actorID);
-        this.view = null;
+    Monster.prototype.getSpriteName = function () {
+        return this.name;
     };
-    Monster.prototype.getMonster = function () {
+    Monster.prototype.initialiseObject = function (view, x, y) {
         var n = Math.floor(Math.random() * 6);
         if (n == 0) {
             this.name = "spider";
@@ -359,4 +403,14 @@ var Monster = (function () {
         }
     };
     return Monster;
-}());
+}(ActorObject));
+var Treasure = (function (_super) {
+    __extends(Treasure, _super);
+    function Treasure() {
+        return _super !== null && _super.apply(this, arguments) || this;
+    }
+    Treasure.prototype.getSpriteName = function () {
+        return "treasure";
+    };
+    return Treasure;
+}(ActorObject));

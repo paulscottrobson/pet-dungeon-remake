@@ -10,7 +10,7 @@
 class GameView extends Phaser.Group implements IView {
 
     private actors:Phaser.Sprite[];
-    private singleCells:Phaser.Image[];
+    private cells:Phaser.Image[][];
     private cellSize:number;
     private tileName:string[];
     private nextActorID:number; 
@@ -21,7 +21,7 @@ class GameView extends Phaser.Group implements IView {
     constructor(game:Phaser.Game,cellSize:number) {
         super(game);
         this.actors = [];
-        this.singleCells = [];
+        this.cells = [];
         this.cellSize = cellSize;
         this.tileName = [];
         this.nextActorID = 0;
@@ -37,26 +37,31 @@ class GameView extends Phaser.Group implements IView {
     }
 
     destroy(): void {
-        this.actors = this.singleCells = null;
+        this.actors = this.cells = null;
         super.destroy();
     }
     
     setCell(x: number, y: number, cell: CELLTYPE): void {
-        var key:number = this.getKey(x,y);
-        if (this.singleCells[key] == null) {
+        this.cells[x] = this.cells[x] || [];
+        if (this.cells[x][y] == null) {
             var img:Phaser.Image;
             img = this.game.add.image(x*this.cellSize,y*this.cellSize,
                                   "sprites",this.tileName[cell],this);
             img.sendToBack();
-            this.singleCells[key] = img;        
+            this.cells[x][y] = img;        
+            this.setCellVisibility(x,y,false);
         } else {
-            this.singleCells[key].loadTexture("sprites",this.tileName[cell]);
+            this.cells[x][y].loadTexture("sprites",this.tileName[cell]);
         }
-        this.singleCells[key].width = this.singleCells[key].height = this.cellSize;
+        this.cells[x][y].width = this.cells[x][y].height = this.cellSize;
     }
 
-    getKey(x:number,y:number) : number {
-        return (x + 10) * 1000 + y + 10;
+    setCellVisibility(x:number,y:number,isVisible:boolean): void {
+        this.cells[x] = this.cells[x] || [];
+        if (this.cells[x][y] == null) {
+            this.setCell(x,y,CELLTYPE.ROCK);
+        }
+        this.cells[x][y].alpha = isVisible ? 1.0:0.33;
     }
 
     addActor(x: number, y: number, sprite: string): number {
@@ -65,7 +70,6 @@ class GameView extends Phaser.Group implements IView {
         spr.width = spr.height = this.cellSize;                                                     
         var n:number = this.nextActorID++;
         this.actors[n] = spr;
-        //this.updateActorVisibility(n,x,y);
         return n;                                                     
     }
 
@@ -85,24 +89,23 @@ class GameView extends Phaser.Group implements IView {
         this.game.add.tween(this.actors[actorID]).
                             to({ x: x*this.cellSize,y:y*this.cellSize },
                             250,
-                            Phaser.Easing.Default,true);
-        this.updateActorVisibility(actorID,x,y);                            
+                            Phaser.Easing.Default,true);        
     }
 
-    /**
-     * Update the visibility of the actor who is at x,y
-     * 
-     * @param {number} actorID 
-     * @param {number} x 
-     * @param {number} y 
-     * 
-     * @memberOf IView
-     */
+    updateActorVisiblity() : void {
+        for (var actor of this.actors) {
+            var x:number = Math.floor(actor.x / this.cellSize);
+            var y:number = Math.floor(actor.y / this.cellSize);
+            actor.alpha = this.cells[x][y].alpha;
+            actor.visible = this.cells[x][y].visible;
+        }    
+    }
 
-    private updateActorVisibility(actorID: number, x: number, y: number) : void {
+    setCameraOn(actorID:number) : void {
         if (this.actors[actorID] == null) {
             throw Error("Unknown actor ID");
         }
-        this.actors[actorID].alpha = (this.singleCells[this.getKey(x,y)] != null) ? 1.0:0.35;
+        this.x = -this.actors[actorID].x - this.cellSize/2 + this.game.width / 2;
+        this.y = -this.actors[actorID].y - this.cellSize/2 + this.game.height / 2;
     }
 }

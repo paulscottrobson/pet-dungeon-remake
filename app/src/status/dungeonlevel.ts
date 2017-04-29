@@ -6,12 +6,12 @@ class DungeonLevel implements ILevel {
     private level:number;
     private cell:CELLTYPE[][];
     private monsters:IMonster[];
-
+    private treasures:ITreasure[];
 
     constructor(view:IView,level:number,width:number,height:number) {
         // Save information
         this.width = width;this.height = height;this.level = level;
-        this.monsters = [];
+        this.monsters = [];this.treasures = [];
         // Fill level with rock & initialise arrays
         this.cell = [];
         for (var x = 0;x < width;x++) {
@@ -36,8 +36,17 @@ class DungeonLevel implements ILevel {
         var goldCount = Math.max(2,Math.round(width*height)/(40*23)*11);
         for (var n = 0;n < goldCount;n++) {
             var pos:number[] = this.findSpace(CELLTYPE.FLOOR);
-            this.cell[pos[0]][pos[1]] = CELLTYPE.TREASURE;
+            var trs:ITreasure = new Treasure(view,pos[0],pos[1]);
+            this.treasures.push(trs);
         }
+        // Copy to map.
+        for (var x = 0;x < this.getWidth();x++) {
+            for (var y = 0;y < this.getHeight();y++) {
+                view.setCell(x,y,this.cell[x][y]);
+            }
+        }
+        // Update actor visibility
+        view.updateActorVisiblity();
     }
 
     public findSpace(reqd:CELLTYPE):number[] {
@@ -189,18 +198,20 @@ class DungeonLevel implements ILevel {
         for (var xc:number = x-radius;xc <= x+radius;xc++) {
             for (var yc:number = y-radius;yc <= y+radius;yc++) {
                 if (xc >= 0 && yc >= 0 && xc < this.width && yc < this.height) {
-                    view.setCell(xc,yc,this.cell[xc][yc]);
+                    view.setCellVisibility(xc,yc,true);
                 }
             }
         }
+        view.updateActorVisiblity();
     }
 
     openVisibilityAll(view:IView): void {
         for (var x = 0;x < this.getWidth();x++) {
             for (var y = 0;y < this.getHeight();y++) {
-                view.setCell(x,y,this.cell[x][y]);
+                view.setCellVisibility(x,y,true);
             }
         }
+        view.updateActorVisiblity();
     }
 
 }

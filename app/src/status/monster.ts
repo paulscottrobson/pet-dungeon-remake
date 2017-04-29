@@ -1,33 +1,14 @@
 /// <reference path="../../lib/phaser.comments.d.ts"/>
 
-interface IMonster {
-    x:number;
-    y:number;
-    name:string;
-    actorID:number;
 
-    destroy(): void;
-}
-
-class Monster implements IMonster {
-    public x:number;
-    public y:number;
+class Monster extends ActorObject implements IMonster {
     public name:string;
-    public actorID:number;
-    private view:IView;
 
-    constructor(view:IView,x:number,y:number) {
-        this.x = x;this.y = y;this.view = view;
-        this.getMonster();
-        this.actorID = view.addActor(x,y,this.name);
+    public getSpriteName():string {
+        return this.name;
     }
 
-    destroy() : void {
-        this.view.removeActor(this.actorID);
-        this.view = null;
-    }
-
-    private getMonster(): void {
+    public initialiseObject(view:IView,x:number,y:number) {
         var n:number = Math.floor(Math.random() * 6);
         if (n == 0) {
             this.name = "spider";

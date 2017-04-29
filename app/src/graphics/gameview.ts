@@ -68,7 +68,6 @@ class GameView extends Phaser.Group implements IView {
             var y:number = pointer.y-this.cellSize/2-this.actors[this.cameraActor].getBounds().y;
             x = Math.min(Math.max(-1,Math.round(x / this.cellSize)),1);
             y = Math.min(Math.max(-1,Math.round(y / this.cellSize)),1);
-            console.log(x,y,x == 0,y == 0);
             this.onClickGameSpace.dispatch(this,x,y,pointer);
         }
     }
@@ -96,7 +95,7 @@ class GameView extends Phaser.Group implements IView {
         if (this.cells[x][y] == null) {
             this.setCell(x,y,CELLTYPE.ROCK);
         }
-        this.cells[x][y].alpha = isVisible ? 1.0:0.3;
+        this.cells[x][y].alpha = isVisible ? 1.0:0.25;
     }
 
     addActor(x: number, y: number, sprite: string): number {
@@ -166,7 +165,7 @@ class GameView extends Phaser.Group implements IView {
     }
 
     updateStatus(status:IGameStatus): void {
-        this.status[0].text = (status.hitPoints).toString();
+        this.status[0].text = Math.floor(Math.max(0,status.hitPoints+0.5)).toString();
         this.status[1].text = (status.experience).toString();
         this.status[2].text = (status.gold).toString();
     }

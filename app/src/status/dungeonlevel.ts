@@ -8,9 +8,9 @@ class DungeonLevel implements ILevel {
     private monsters:IMonster[];
     private treasures:ITreasure[];
 
-    constructor(view:IView,level:number,width:number,height:number,stairs:boolean = false) {
+    constructor(view:IView,status:IGameStatus,width:number,height:number,stairs:boolean = false) {
         // Save information
-        this.width = width;this.height = height;this.level = level;
+        this.width = width;this.height = height;this.level = status.level;
         this.monsters = [];this.treasures = [];
         // Fill level with rock & initialise arrays
         this.cell = [];
@@ -25,20 +25,22 @@ class DungeonLevel implements ILevel {
         // Rooms
         var roomCount = Math.max(3,Math.round(width*height)/(40*23)*9);
         for (var n = 0;n < roomCount;n++) {
-            this.drawRoom(view);
+            this.drawRoom(view,status);
         }
         // Stairs
         if (stairs) {
-            var pos:number[] = this.findSpace(CELLTYPE.FLOOR);
-            this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSD;
-            var pos:number[] = this.findSpace(CELLTYPE.FLOOR);
-            this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSU;
+            for (var n = 0;n < 12;n++) {
+                var pos:number[] = this.findSpace(CELLTYPE.FLOOR);
+                this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSD;
+                var pos:number[] = this.findSpace(CELLTYPE.FLOOR);
+                this.cell[pos[0]][pos[1]] = CELLTYPE.STAIRSU;
+            }
         }
         // Gold
         var goldCount = Math.max(2,Math.round(width*height)/(40*23)*11);
         for (var n = 0;n < goldCount;n++) {
             var pos:number[] = this.findSpace(CELLTYPE.FLOOR);
-            var trs:ITreasure = new Treasure(view,pos[0],pos[1]);
+            var trs:ITreasure = new Treasure(view,status,pos[0],pos[1]);
             this.treasures.push(trs);
         }
         // Copy to map.
@@ -49,6 +51,14 @@ class DungeonLevel implements ILevel {
         }
         // Update actor visibility
         view.updateActorVisiblity();
+    }
+
+    public getTreasureList() : ITreasure[] {
+        return this.treasures;
+    }
+
+    public getMonsterList() : IMonster[] {
+        return this.monsters;
     }
 
     public findSpace(reqd:CELLTYPE):number[] {
@@ -71,7 +81,7 @@ class DungeonLevel implements ILevel {
      * 
      * @memberOf DungeonLevel
      */
-    private drawRoom(view:IView) : void {
+    private drawRoom(view:IView,status:IGameStatus) : void {
         var x:number;
         var y:number;
         var w:number;
@@ -102,7 +112,7 @@ class DungeonLevel implements ILevel {
             }
         }
         // Put a monster in it.
-        var m:IMonster = new Monster(view,x+this.getIntRandom(w),y+this.getIntRandom(h));
+        var m:IMonster = new Monster(view,status,x+this.getIntRandom(w),y+this.getIntRandom(h));
         this.monsters.push(m);
         
         // Open up south and east passages - added - north and west passages too.
@@ -195,25 +205,4 @@ class DungeonLevel implements ILevel {
     getLevel(): number {
         return this.level;
     }
-
-    openVisibility(view:IView,x: number, y: number, radius: number): void {
-        for (var xc:number = x-radius;xc <= x+radius;xc++) {
-            for (var yc:number = y-radius;yc <= y+radius;yc++) {
-                if (xc >= 0 && yc >= 0 && xc < this.width && yc < this.height) {
-                    view.setCellVisibility(xc,yc,true);
-                }
-            }
-        }
-        view.updateActorVisiblity();
-    }
-
-    openVisibilityAll(view:IView): void {
-        for (var x = 0;x < this.getWidth();x++) {
-            for (var y = 0;y < this.getHeight();y++) {
-                view.setCellVisibility(x,y,true);
-            }
-        }
-        view.updateActorVisiblity();
-    }
-
 }

@@ -46,26 +46,6 @@ interface ILevel {
      */
     getLevel():number;
     /**
-     * Open view in given view
-     * 
-     * @param {IView} view 
-     * @param {number} x 
-     * @param {number} y 
-     * @param {number} radius 
-     * 
-     * @memberOf ILevel
-     */
-    openVisibility(view:IView,x:number,y:number,radius:number): void;
-    /**
-     * Open whole display in given view.
-     * 
-     * @param {IView} view 
-     * 
-     * @memberOf ILevel
-     */
-    openVisibilityAll(view:IView): void;
-
-    /**
      * Find empty space in current level
      * 
      * @param {CELLTYPE} reqd type of tile which is 'empty'
@@ -74,4 +54,21 @@ interface ILevel {
      * @memberOf ILevel
      */
     findSpace(reqd:CELLTYPE):number[];
+    /**
+     * Get list of treasures
+     * 
+     * @returns {ITreasure[]} 
+     * 
+     * @memberOf ILevel
+     */
+    getTreasureList() : ITreasure[];
+    /**
+     * Get list of monsters.
+     * 
+     * @returns {IMonster[]} 
+     * 
+     * @memberOf ILevel
+     */
+    getMonsterList() : IMonster[];
+
 }

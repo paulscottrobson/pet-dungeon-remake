@@ -8,7 +8,7 @@
  */
 class TextScroller extends Phaser.Group {
 
-    private static LINES:number = 4;
+    private static LINES:number = 5;
     private lines:Phaser.BitmapText[];
     private yCursor:number = 0;
     private toWrite:string;
@@ -32,7 +32,7 @@ class TextScroller extends Phaser.Group {
         this.queue = [];
         for (var n:number = 0;n < TextScroller.LINES;n++) {
             this.lines[n] = game.add.bitmapText(width * 0.14,(n+1)*height / (TextScroller.LINES+1),
-                                                "font","",32,this);
+                                                "font","",22,this);
             this.lines[n].tint = 0x000000;                                                
             this.lines[n].anchor.setTo(0,0.5);
         }

@@ -28,11 +28,12 @@ interface IObject {
      * instantiated (so selects the monster for example).
      * 
      * @param {IView} view 
+     * @param {IGameStatus} status
      * @param {number} x 
      * @param {number} y 
      * 
      * @memberOf IObject
      */
-    initialiseObject(view:IView,x:number,y:number):void;
+    initialiseObject(view:IView,status:IGameStatus,x:number,y:number):void;
 }
 

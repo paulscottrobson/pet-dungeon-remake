@@ -8,7 +8,7 @@ class GameState extends Phaser.State {
     private level:ILevel;
     private moveState:boolean;
     private negotiateMonster:IMonster;
-    private hasLost:boolean;
+    private gameOver:boolean;
 
     init(status:IGameStatus) : void {
         this.status = status;
@@ -19,7 +19,8 @@ class GameState extends Phaser.State {
         this.view = new GameView(this.game,80);
         this.level = new DungeonLevel(this.view,this.status,40,23,false);
         this.moveState = true;
-        this.hasLost = false;
+        this.gameOver = false;
+
         if (this.status.firstLevelVisited) {
             var p:number[] = this.level.findSpace(CELLTYPE.PASSAGE);
             if (p == null) p = this.level.findSpace(CELLTYPE.FLOOR);
@@ -47,13 +48,13 @@ class GameState extends Phaser.State {
         // Check if dead.
         if (this.status.hitPoints <= 1) {
             // If first time dead show game over message.
-            if (!this.hasLost) {
-                this.hasLost = true;
-                this.view.showGameOver();
+            if (!this.gameOver) {
+                this.gameOver = true;
+                this.view.showResult("Game Over !");
             }
         }
         // Check all monsters to see if one will move and maybe attack
-        if (this.status.hitPoints > 1 && this.moveState) {
+        if (!this.gameOver && this.moveState) {
             var attackMonster:IMonster = null;
             for (var monster of this.level.getMonsterList()) {
                 if (monster.isAwake()) {
@@ -166,6 +167,13 @@ class GameState extends Phaser.State {
             this.status.gold += gp;
             treasure.destroy();
             ActorObject.removeListItem(this.level.getTreasureList(),treasure);
+            // Won the game when you have all the gold pieces.
+            if (this.level.getTreasureList().length == 0) {
+                if (!this.gameOver) {
+                    this.gameOver = true;
+                    this.view.showResult("You win !");
+                }
+            }
         }                                                             
     }
     /**
@@ -302,8 +310,31 @@ class GameState extends Phaser.State {
         if (!monster.timeToMove(elapsedMS)) {
             return false;
         }
-        // TODO: Chase down player.
-        console.log("Move !");
-        return false;
+        // Chase player.
+        var x:number = this.moveTowards(monster.xCell,this.status.xPlayer);
+        var y:number = this.moveTowards(monster.yCell,this.status.yPlayer);
+
+        if (this.level.get(x,y) == CELLTYPE.FLOOR) {
+            monster.xCell = x;monster.yCell = y;
+            this.view.moveActor(monster.actorID,x,y);
+        }
+        return true;
     }
+
+    /**
+     * Chase one number toward another.
+     * 
+     * @private
+     * @param {number} x 
+     * @param {number} target 
+     * @returns 
+     * 
+     * @memberOf GameState
+     */
+    private moveTowards(x:number,target:number) {
+        if (x < target) { return x+1; }
+        if (x > target) { return x-1; }
+        return x;
+    }
+
 }    

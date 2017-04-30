@@ -179,9 +179,9 @@ class GameView extends Phaser.Group implements IView {
         this.status[2].text = (status.gold).toString();
     }
 
-    showGameOver():void {
+    showResult(msg:string):void {
         var txt:Phaser.BitmapText = this.game.add.bitmapText(this.game.width/2,this.scroller.y/2,
-                                                             "font","Game Over",48,this.topGroup);
+                                                             "font",msg,48,this.topGroup);
         txt.anchor.setTo(0.5,0.5);                                                             
         txt.tint = 0xFF8000;
     }

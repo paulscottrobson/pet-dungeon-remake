@@ -21,7 +21,7 @@ var GameState = (function (_super) {
         this.view = new GameView(this.game, 80);
         this.level = new DungeonLevel(this.view, this.status, 40, 23, false);
         this.moveState = true;
-        this.hasLost = false;
+        this.gameOver = false;
         if (this.status.firstLevelVisited) {
             var p = this.level.findSpace(CELLTYPE.PASSAGE);
             if (p == null)
@@ -43,12 +43,12 @@ var GameState = (function (_super) {
     GameState.prototype.update = function () {
         this.view.setCameraOn(this.playerActor);
         if (this.status.hitPoints <= 1) {
-            if (!this.hasLost) {
-                this.hasLost = true;
-                this.view.showGameOver();
+            if (!this.gameOver) {
+                this.gameOver = true;
+                this.view.showResult("Game Over !");
             }
         }
-        if (this.status.hitPoints > 1 && this.moveState) {
+        if (!this.gameOver && this.moveState) {
             var attackMonster = null;
             for (var _i = 0, _a = this.level.getMonsterList(); _i < _a.length; _i++) {
                 var monster = _a[_i];
@@ -116,6 +116,12 @@ var GameState = (function (_super) {
             this.status.gold += gp;
             treasure.destroy();
             ActorObject.removeListItem(this.level.getTreasureList(), treasure);
+            if (this.level.getTreasureList().length == 0) {
+                if (!this.gameOver) {
+                    this.gameOver = true;
+                    this.view.showResult("You win !");
+                }
+            }
         }
     };
     GameState.prototype.openAndGenerateWarnings = function (range) {
@@ -202,8 +208,23 @@ var GameState = (function (_super) {
         if (!monster.timeToMove(elapsedMS)) {
             return false;
         }
-        console.log("Move !");
-        return false;
+        var x = this.moveTowards(monster.xCell, this.status.xPlayer);
+        var y = this.moveTowards(monster.yCell, this.status.yPlayer);
+        if (this.level.get(x, y) == CELLTYPE.FLOOR) {
+            monster.xCell = x;
+            monster.yCell = y;
+            this.view.moveActor(monster.actorID, x, y);
+        }
+        return true;
+    };
+    GameState.prototype.moveTowards = function (x, target) {
+        if (x < target) {
+            return x + 1;
+        }
+        if (x > target) {
+            return x - 1;
+        }
+        return x;
     };
     return GameState;
 }(Phaser.State));
@@ -404,8 +425,8 @@ var GameView = (function (_super) {
         this.status[1].text = (status.experience).toString();
         this.status[2].text = (status.gold).toString();
     };
-    GameView.prototype.showGameOver = function () {
-        var txt = this.game.add.bitmapText(this.game.width / 2, this.scroller.y / 2, "font", "Game Over", 48, this.topGroup);
+    GameView.prototype.showResult = function (msg) {
+        var txt = this.game.add.bitmapText(this.game.width / 2, this.scroller.y / 2, "font", msg, 48, this.topGroup);
         txt.anchor.setTo(0.5, 0.5);
         txt.tint = 0xFF8000;
     };

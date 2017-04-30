@@ -15,6 +15,7 @@ class GameState extends Phaser.State {
     }
 
     create() : void {
+        this.status.gold = 100;
         this.view = new GameView(this.game,80);
         this.level = new DungeonLevel(this.view,this.status,40,23,false);
         this.moveState = true;
@@ -41,12 +42,33 @@ class GameState extends Phaser.State {
     }
 
     update() : void {    
-        this.view.setCameraOn(this.playerActor);
+        // Centre on player
+        this.view.setCameraOn(this.playerActor);        
+        // Check if dead.
         if (this.status.hitPoints <= 1) {
             // If first time dead show game over message.
             if (!this.hasLost) {
                 this.hasLost = true;
                 this.view.showGameOver();
+            }
+        }
+        // Check all monsters to see if one will move and maybe attack
+        if (this.status.hitPoints > 1 && this.moveState) {
+            var attackMonster:IMonster = null;
+            for (var monster of this.level.getMonsterList()) {
+                if (monster.isAwake()) {
+                    attackMonster = monster;
+                }
+            }
+            // Monster attacking.
+            if (attackMonster != null) {
+                // Try to move towards player if time.
+                var hasMoved:boolean = this.moveToPlayer(attackMonster,this.game.time.elapsedMS);
+                // If moved onto the player fight.
+                if (hasMoved && attackMonster.xCell == this.status.xPlayer && 
+                                        attackMonster.yCell == this.status.yPlayer) {
+                    this.fight(attackMonster);
+                }
             }
         }
     }
@@ -70,7 +92,15 @@ class GameState extends Phaser.State {
             return;
         }
         // Waiting for surrender option.
-        // TODO: Check surrender 
+        if (dx == 0 && dy == 0) {
+            this.status.gold = Math.floor(this.status.gold/2);
+            // Remove the monster object.
+            this.negotiateMonster.destroy();
+            ActorObject.removeListItem(this.level.getMonsterList(),this.negotiateMonster);
+            // Update the status.
+            this.view.updateStatus(this.status);
+        }
+        this.moveState = true;
     }
 
     /**
@@ -221,8 +251,6 @@ class GameState extends Phaser.State {
         if (monster.getStrength() > 1) {
             this.view.write(monster.name+" now "+monster.getStrength().toString()+" hp");
 
-            // TODO: Check for gold handout/surrender
-
             // Move the monster away from the player.
             do {
                 monster.xCell = this.status.xPlayer + (Math.floor(Math.random() * 3)) - 1;
@@ -230,6 +258,14 @@ class GameState extends Phaser.State {
             } while (this.level.get(monster.xCell,monster.yCell) != CELLTYPE.FLOOR ||
                     (monster.xCell == this.status.xPlayer && monster.yCell == this.status.yPlayer));
             this.view.moveActor(monster.actorID,monster.xCell,monster.yCell);
+
+            // Think about surrender ?
+            if (monster.getStrength() / (this.status.hitPoints+1) > 2) {
+                this.view.write("Leave for half gold");
+                this.view.write("Tap player to accept");
+                this.negotiateMonster = monster;
+                this.moveState = false;                
+            }            
             return;
         }
         // Monster has died.
@@ -250,5 +286,24 @@ class GameState extends Phaser.State {
         ActorObject.removeListItem(this.level.getMonsterList(),monster);
         // Update the status.
         this.view.updateStatus(this.status);
+    }
+
+    /**
+     * Move the monster to attack the player. 
+     * 
+     * @private
+     * @param {IMonster} monster 
+     * @param {number} elapsedMS
+     * @returns {boolean} true if moved.
+     * 
+     * @memberOf GameState
+     */
+    private moveToPlayer(monster:IMonster,elapsedMS:number):boolean {
+        if (!monster.timeToMove(elapsedMS)) {
+            return false;
+        }
+        // TODO: Chase down player.
+        console.log("Move !");
+        return false;
     }
 }    

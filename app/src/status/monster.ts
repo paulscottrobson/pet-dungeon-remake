@@ -7,6 +7,8 @@ class Monster extends ActorObject implements IMonster {
     private fullHealth:number;
     private asleep:boolean;
     private basePower:number;
+    private moveClock:number;
+    private moveTime:number;
 
     public getSpriteName():string {
         return this.name;
@@ -18,6 +20,7 @@ class Monster extends ActorObject implements IMonster {
         this.asleep = true;
         this.fullHealth = -1;
         this.strength = -1;
+        this.moveClock = this.moveTime = 2500+Math.random()*2000;
 
         if (n == 0) {
             this.name = "spider";
@@ -73,6 +76,15 @@ class Monster extends ActorObject implements IMonster {
 
     public getExperience():number {
         return this.basePower;
+    }
+
+    public timeToMove(elapsedMS:number): boolean {
+        this.moveClock -= elapsedMS;
+        if (this.moveClock < 0) {
+            this.moveClock = this.moveTime;
+            return true;            
+        }
+        return false;
     }
 }
 

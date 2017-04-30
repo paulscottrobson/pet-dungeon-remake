@@ -8,5 +8,6 @@ interface IMonster extends IObject {
     setToSleep() : void;
     isAwake():boolean;
     wakeUp(status:IGameStatus) : void;    
+    timeToMove(elapsedMS:number):boolean;
 }
 

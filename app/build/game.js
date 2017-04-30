@@ -17,6 +17,7 @@ var GameState = (function (_super) {
         this.status = status;
     };
     GameState.prototype.create = function () {
+        this.status.gold = 100;
         this.view = new GameView(this.game, 80);
         this.level = new DungeonLevel(this.view, this.status, 40, 23, false);
         this.moveState = true;
@@ -47,6 +48,22 @@ var GameState = (function (_super) {
                 this.view.showGameOver();
             }
         }
+        if (this.status.hitPoints > 1 && this.moveState) {
+            var attackMonster = null;
+            for (var _i = 0, _a = this.level.getMonsterList(); _i < _a.length; _i++) {
+                var monster = _a[_i];
+                if (monster.isAwake()) {
+                    attackMonster = monster;
+                }
+            }
+            if (attackMonster != null) {
+                var hasMoved = this.moveToPlayer(attackMonster, this.game.time.elapsedMS);
+                if (hasMoved && attackMonster.xCell == this.status.xPlayer &&
+                    attackMonster.yCell == this.status.yPlayer) {
+                    this.fight(attackMonster);
+                }
+            }
+        }
     };
     GameState.prototype.inputHandler = function (obj, dx, dy) {
         if (this.moveState) {
@@ -55,6 +72,13 @@ var GameState = (function (_super) {
             }
             return;
         }
+        if (dx == 0 && dy == 0) {
+            this.status.gold = Math.floor(this.status.gold / 2);
+            this.negotiateMonster.destroy();
+            ActorObject.removeListItem(this.level.getMonsterList(), this.negotiateMonster);
+            this.view.updateStatus(this.status);
+        }
+        this.moveState = true;
     };
     GameState.prototype.movePlayer = function (dx, dy) {
         if (dx == 0 && dy == 0) {
@@ -154,6 +178,12 @@ var GameState = (function (_super) {
             } while (this.level.get(monster.xCell, monster.yCell) != CELLTYPE.FLOOR ||
                 (monster.xCell == this.status.xPlayer && monster.yCell == this.status.yPlayer));
             this.view.moveActor(monster.actorID, monster.xCell, monster.yCell);
+            if (monster.getStrength() / (this.status.hitPoints + 1) > 2) {
+                this.view.write("Leave for half gold");
+                this.view.write("Tap player to accept");
+                this.negotiateMonster = monster;
+                this.moveState = false;
+            }
             return;
         }
         this.view.write(monster.name + " is dead!");
@@ -167,6 +197,13 @@ var GameState = (function (_super) {
         monster.destroy();
         ActorObject.removeListItem(this.level.getMonsterList(), monster);
         this.view.updateStatus(this.status);
+    };
+    GameState.prototype.moveToPlayer = function (monster, elapsedMS) {
+        if (!monster.timeToMove(elapsedMS)) {
+            return false;
+        }
+        console.log("Move !");
+        return false;
     };
     return GameState;
 }(Phaser.State));
@@ -348,7 +385,7 @@ var GameView = (function (_super) {
         for (var x = 0; x < 2; x++) {
             for (var y = 0; y < 3; y++) {
                 var txt = this.game.add.bitmapText(0, 0, "font", "0000", 32, this.topGroup);
-                txt.x = (0.1 + x) * (txt.width);
+                txt.x = (x == 0 ? 0 : 0.75) * (txt.width);
                 txt.y = (0.2 + y) * txt.height * 1.1;
                 txt.tint = (x == 0) ? 0xFFFF00 : 0x00FFFF;
                 txt.anchor.setTo(0, 0);
@@ -642,6 +679,7 @@ var Monster = (function (_super) {
         this.asleep = true;
         this.fullHealth = -1;
         this.strength = -1;
+        this.moveClock = this.moveTime = 2500 + Math.random() * 2000;
         if (n == 0) {
             this.name = "spider";
             this.basePower = 3;
@@ -690,6 +728,14 @@ var Monster = (function (_super) {
     };
     Monster.prototype.getExperience = function () {
         return this.basePower;
+    };
+    Monster.prototype.timeToMove = function (elapsedMS) {
+        this.moveClock -= elapsedMS;
+        if (this.moveClock < 0) {
+            this.moveClock = this.moveTime;
+            return true;
+        }
+        return false;
     };
     return Monster;
 }(ActorObject));

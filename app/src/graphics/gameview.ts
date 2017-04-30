@@ -159,7 +159,7 @@ class GameView extends Phaser.Group implements IView {
                 var txt:Phaser.BitmapText = this.game.add.bitmapText(0,0,
                                                                      "font","0000",
                                                                      32,this.topGroup);
-                txt.x = (0.1+x) * (txt.width);
+                txt.x = (x == 0 ? 0 : 0.75) * (txt.width);
                 txt.y = (0.2+y) * txt.height * 1.1;
                 txt.tint = (x == 0) ? 0xFFFF00 : 0x00FFFF;
                 txt.anchor.setTo(0,0);

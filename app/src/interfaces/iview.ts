@@ -102,6 +102,6 @@ interface IView {
      * 
      * @memberOf IView
      */
-    showGameOver():void;
+    showResult(msg:string):void;
 
 }

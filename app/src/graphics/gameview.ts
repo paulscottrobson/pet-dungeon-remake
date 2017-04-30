@@ -102,7 +102,7 @@ class GameView extends Phaser.Group implements IView {
         if (this.cells[x][y] == null) {
             this.setCell(x,y,CELLTYPE.ROCK);
         }
-        this.cells[x][y].alpha = isVisible ? 1.0:0.25;
+        this.cells[x][y].alpha = isVisible ? 1.0:0;
     }
 
     addActor(x: number, y: number, sprite: string): number {

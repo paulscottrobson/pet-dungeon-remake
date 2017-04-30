@@ -360,7 +360,7 @@ var GameView = (function (_super) {
         if (this.cells[x][y] == null) {
             this.setCell(x, y, CELLTYPE.ROCK);
         }
-        this.cells[x][y].alpha = isVisible ? 1.0 : 0.25;
+        this.cells[x][y].alpha = isVisible ? 1.0 : 0;
     };
     GameView.prototype.addActor = function (x, y, sprite) {
         var spr = this.game.add.sprite(x * this.cellSize, y * this.cellSize, "sprites", sprite, this.scrollGroup);
